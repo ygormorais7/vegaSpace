@@ -98,7 +98,7 @@ void init_glut(const char *nome_janela, int argc, char** argv){
 
 
     // Carrega o modelo OBJ
-    model = glmReadOBJ((char*)"./modelos/nave1.obj", true);
+    model = glmReadOBJ((char*)"./modelos/naves/nave1.obj", true);
     if (!model) {
         fprintf(stderr, "Erro: Não foi possível carregar o modelo.\n");
         exit(1);
