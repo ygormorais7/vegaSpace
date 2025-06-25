@@ -18,13 +18,14 @@
 
 #include "glm.h"
 #include "glut_text.h"
+#include <cmath>
 
 
 
 // ------------ Declaracao de constantes e variaveis ------------
 #define ESC 27 // ASCII para a tecla ESC
 #define MAX_FPS 70 // Maximo de Frames Por Segundo (FPS) desejado
-#define FPS 120 // FPS desejado atualmente
+#define FPS 60 // FPS desejado atualmente
 
 
 // ------------ Variáveis Globais ------------
@@ -40,6 +41,21 @@ float posx = 0.0, posy = 0.0, posz = 0.0; // deslocamento do modelo 3D no eixo x
 float graus = 15.0, deslocamento = 0.2; //incrementos do angulo de graus e do deslocamento
 float rotx = 0.0, roty = 0.0, rotz = 0.0; // angulo de graus do modelo 3D no eixo x, y e z
 
+bool is_paused = false; // Determina se a animacao esta tocando ou em pausa
+
+//Enumeracoes com as direcoes do Objeto 3D em relacao a camera para realizar movimentacoes
+enum direcao_acam{frente, tras, esquerda, direita};
+int direcao = tras;
+
+bool is_shooting = false;
+bool esfera_ativa = false;           // Indica se a esfera está visível e em movimento
+float esfera_x = 0.0;                // Posição X da esfera
+float esfera_y = 0.0;                // Posição Y da esfera
+float esfera_z = 0.0;                // Posição Z da esfera
+float esfera_dir_x = 0.0;            // Direção X do movimento
+float esfera_dir_y = 0.0;            // Direção Y do movimento
+float esfera_dir_z = 0.0;            // Direção Z do movimento
+float esfera_velocidade = 0.07;      // Velocidade de movimento da esfera
 
 
 // ------------ Declaracoes antecipadas (forward) das funcoes (assinaturas) ------------
@@ -50,6 +66,7 @@ void keyboard(unsigned char key, int x, int y);
 void keyboard_special(int key, int x, int y);
 void timer(int value);
 void computeFPS(); // Apenas computa FPS, não controla animação
+void drawSphere(float x, float y, float z);
 
 
 
@@ -81,7 +98,7 @@ void init_glut(const char *nome_janela, int argc, char** argv){
 
 
     // Carrega o modelo OBJ
-    model = glmReadOBJ((char*)"./Starship_Collection1.obj", true);
+    model = glmReadOBJ((char*)"./modelos/nave1.obj", true);
     if (!model) {
         fprintf(stderr, "Erro: Não foi possível carregar o modelo.\n");
         exit(1);
@@ -139,6 +156,51 @@ void display(void){
     glPopMatrix();                   // Restaura o estado anterior
 
 
+    if (is_shooting && !esfera_ativa){
+        esfera_ativa = true;
+
+        float distancia = 0.4;
+        // Converter rotações para radianos
+        float roty_rad = (roty * M_PI) / 180.0;
+        float rotx_rad = (rotx * M_PI) / 180.0;
+
+        // Salva a direção do movimento baseada na orientação 3D da nave
+        // O vetor "para frente" (0,0,1) é rotacionado para corresponder à nave
+        // esfera_dir_x = -cos(rotx_rad) * sin(roty_rad);
+        // esfera_dir_y = sin(rotx_rad);
+        // esfera_dir_z = -cos(rotx_rad) * cos(roty_rad);
+        esfera_dir_x = -sin(roty_rad);
+        esfera_dir_y = sin(rotx_rad) * cos(roty_rad);
+        esfera_dir_z = -cos(roty_rad) * cos(rotx_rad);
+
+        // Define a posição inicial da esfera à frente da nave
+        esfera_x = posx + distancia * esfera_dir_x;
+        esfera_y = posy + distancia * esfera_dir_y;
+        esfera_z = posz + distancia * esfera_dir_z;
+    }
+
+    // Se a esfera estiver ativa, move e desenha
+    if(esfera_ativa) {
+        esfera_x += esfera_dir_x * esfera_velocidade;
+        esfera_y += esfera_dir_y * esfera_velocidade;
+        esfera_z += esfera_dir_z * esfera_velocidade;
+        
+        // Save complete OpenGL state
+        glPushAttrib(GL_ALL_ATTRIB_BITS);
+        
+        // Draw the sphere
+        drawSphere(esfera_x, esfera_y, esfera_z);
+        
+        // Restore all OpenGL state
+        glPopAttrib();
+        
+        // Verifica se a esfera saiu da área visível
+        if(fabsf(esfera_x) > 20.0 || fabsf(esfera_z) > 20.0) {
+            esfera_ativa = false;
+            is_shooting = false;
+        }
+    }
+
     float x = -reshape_ratio-0.30;
     draw_text_stroke(x , 1.15, "FPS: " + to_string(fps), 0.0005);// + " FACE: " + to_string(faces) + " VERT: " + to_string(vertices));
 
@@ -180,10 +242,55 @@ void computeFPS(){
     next_clock = clock + 1000;
 }
 
+// Desenhar a esfera do tiro
+void drawSphere(float x, float y, float z) {
+    float radius = 0.02;  // Raio da esfera
+    int slices = 20;      // Número de divisões ao redor da esfera
+    int stacks = 16;      // Número de divisões do topo até a base
+    
+    // Use material properties instead of glColor
+    GLfloat sphere_ambient[] = {0.0, 0.1, 0.3, 1.0};
+    GLfloat sphere_diffuse[] = {0.0, 0.3, 1.0, 1.0};
+    GLfloat sphere_specular[] = {0.4, 0.6, 1.0, 1.0};
+    GLfloat sphere_shininess = 64.0;
+    
+    glMaterialfv(GL_FRONT, GL_AMBIENT, sphere_ambient);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, sphere_diffuse);
+    glMaterialfv(GL_FRONT, GL_SPECULAR, sphere_specular);
+    glMaterialf(GL_FRONT, GL_SHININESS, sphere_shininess);
+    
+    glPushMatrix();
+        glTranslatef(x, y, z);
+        glutSolidSphere(radius, slices, stacks);
+    glPopMatrix();
+}
+
 // Funcao utilizada para a animacao com temporizador
 void timer(int value){
     glutTimerFunc(1000/(fps_desejado), timer, 0);
     glutPostRedisplay(); // Manda redesenhar a tela em cada frame
+}
+
+// Atualiza a direção da nave
+void update_direcao(){
+    if(roty ==  0.0 || roty == 360.0){
+        direcao = tras;
+        roty = 0.0;
+        printf("tras\n"); fflush(stdout);
+    }
+    if(roty == 180.0 || roty == -180.0){
+        direcao = frente;
+        roty = 180.0;
+        printf("frente\n"); fflush(stdout);
+    }
+    if(roty ==  90.0){
+        direcao = esquerda;
+        printf("esquerda\n"); fflush(stdout);
+    } 
+    if(roty == -90.0 || roty == 270.0){
+        direcao = direita;
+        printf("direita\n"); fflush(stdout);
+    }
 }
 
 // Controle das teclas comuns
@@ -207,15 +314,33 @@ void keyboard(unsigned char key, int x, int y){
         case ',': case '<': if(fps_desejado > 1) fps_desejado -= 1; break;
         case '.': case '>': if(fps_desejado*2 < MAX_FPS) fps_desejado += 1; break;
         case ESC: exit(EXIT_SUCCESS); break;
+
+        case 'f': case 'F': 
+        if(!is_paused) {
+            is_shooting = true;
+            esfera_ativa = false;
+        }
     }
 }
 
 // Teclas especiais (F1-F12, setas)
 void keyboard_special(int key, int x, int y){
     switch(key){
-        case GLUT_KEY_RIGHT: roty += graus; break;
-        case GLUT_KEY_LEFT:  roty -= graus; break;
-        case GLUT_KEY_UP:    rotx -= graus; break;
-        case GLUT_KEY_DOWN:  rotx += graus; break;
+        case GLUT_KEY_RIGHT:
+            roty += graus; printf("roty = %f\n", roty); fflush(stdout);
+            update_direcao();
+            break;
+        case GLUT_KEY_LEFT:
+            roty -= graus; printf("roty = %f\n", roty); fflush(stdout);
+            update_direcao();
+            break;
+        case GLUT_KEY_UP:
+            rotx -= graus; printf("rotx = %f\n", rotx); fflush(stdout);
+            update_direcao();
+            break;
+        case GLUT_KEY_DOWN:
+            rotx += graus; printf("rotx = %f\n", rotx); fflush(stdout);
+            update_direcao();
+            break;
     }
 }

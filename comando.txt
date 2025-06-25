@@ -1,0 +1,9 @@
+g++ -o exe visualizador.cpp glm.cpp -lGL -lGLU -lglut -lm && ./exe
+
+
+
+
+
+- Explicar como funciona o tiro
+    - A nave deve estar com is_shooting ativado e com esfera_ativa desativado
+    - A esfera é projeta sempre na direção que a nave estiver virada
