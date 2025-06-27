@@ -12,15 +12,15 @@ struct Esfera {
 };
 
 // Inicializa apenas o estado inativo
-void esfera_init(Esfera& e, float velocity = 0.07f);
+void sphere_init(Esfera& e, float velocity = 0.07f);
 
 // Dispara a esfera a partir da nave
-void esfera_fire(Esfera& e, const Ship& ship, float start_dist = 0.4f);
+void sphere_fire(Esfera& e, const Ship& ship, float start_dist = 0.4f);
 
 // Atualiza a posição; desativa se sair de limites
-void esfera_update(Esfera& e, float limit = 20.0f);
+void sphere_update(Esfera& e, float limit = 20.0f);
 
 // Desenha a esfera (somente se e.active == true)
-void esfera_draw(const Esfera& e);
+void sphere_draw(const Esfera& e);
 
 #endif // SPHERE_H

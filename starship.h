@@ -14,7 +14,7 @@ enum ShipDirection {
 // Estrutura que agrupa todos os dados do nave.
 struct Ship {
     GLMmodel* model = nullptr;
-    float posx = 0.0, posy = 0.0, posz = 0.0;
+    float posx = 0.0, posy = 0.0, posz = -1.0;
     float rotx = 0.0, roty = 0.0, rotz = 0.0;
     ShipDirection direction = DIR_BACKWARD;
 };
