@@ -156,16 +156,23 @@ static void display() {
     if (!is_paused) {
         for (auto& a : asteroids) {
             for (auto it = spheres.begin(); it != spheres.end(); ++it) {
+                // 1) calcula vetor diferença entre centros
                 float dx = a.posx - it->x;
                 float dy = a.posy - it->y;
                 float dz = a.posz - it->z;
                 float dist2 = dx*dx + dy*dy + dz*dz;
+
+                // 2) soma dos raios das bounding‐spheres
+                //    SPHERE_RADIUS é o raio fixo da bala;
+                //    a.scale ~ raio do asteroide
                 float R = SPHERE_RADIUS + (a.scale); // assume bound≈scale*1
+
+                // 3) se distância² < (raio_total)², houve colisão
                 if (dist2 < R*R) {
                     // colisão: reposiciona asteroide, remove esfera e pontua
-                    it->active = false;
-                    a.posz = -20.0f;
-                    score += 10;
+                    it->active = false;         // “destrói” a esfera
+                    a.posz = -20.0f;            // reposiciona o asteroide lá atrás
+                    score += 10;                // incrementa a pontuação
                 }
             }
         }
@@ -174,14 +181,19 @@ static void display() {
     // colisão Asteroide vs Nave
     if (!is_paused) {
         for (auto& a : asteroids) {
+            // 1) calcula o vetor diferença entre os centros
             float dx = a.posx - ship.posx;
             float dy = a.posy - ship.posy;
             float dz = a.posz - ship.posz;
             float dist2 = dx*dx + dy*dy + dz*dz;
+
+            // 2) soma dos raios das bounding spheres (nave + asteroide)
             float R = SHIP_RADIUS + (a.scale);
+
+            // 3) se distância² < (raio_total)², houve colisão
             if (dist2 < R*R) {
-                is_paused   = true;
-                is_gameover = true;
+                is_paused   = true;     // pausa o jogo
+                is_gameover = true;     // sinaliza Game Over
                 break;
             }
         }
@@ -272,11 +284,15 @@ static void keyboard(unsigned char key, int x, int y) {
     switch (key) {
         case ESC: exit(EXIT_SUCCESS);break;
 
-        case ',': case '<': if(fps_desejado > 1) fps_desejado -= 1; break;
+        case ',': case '<': if(fps_desejado > 1) fps_desejado--; break;
 
         case '.': case '>': if(fps_desejado*2 < MAX_FPS) fps_desejado += 1; break;
 
-        default: ship_handle_key(ship, key); break;
+        default:
+            if (!is_paused){
+                ship_handle_key(ship, key);
+            }
+            break;
 
         case 'f': case 'F':
             if (!is_paused && spheres.size() < 5) {
@@ -291,5 +307,5 @@ static void keyboard(unsigned char key, int x, int y) {
 
 // Teclas especiais (F1-F12, setas)
 static void keyboard_special(int key, int x, int y) {
-    ship_handle_special_key(ship, key);
+    if (!is_paused) ship_handle_special_key(ship, key);
 }
