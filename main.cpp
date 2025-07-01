@@ -25,6 +25,10 @@
 #include <cmath>
 
 
+// --- aleatorização --- 
+static std::mt19937 rng{ std::random_device{}() };
+static std::uniform_real_distribution<float> distXZ(0.7f, 1.3f);
+static std::uniform_real_distribution<float> distY (0.9f, 1.2f);
 
 // --- Constantes ---
 #define ESC 27
@@ -211,6 +215,7 @@ static void display() {
     if (is_gameover) {
         draw_text_stroke(-0.78, 0.0, "GAME OVER", 0.002);
         draw_text_stroke(-0.6, -0.2, "Pressione 'J' para jogar novamente", 0.0005);
+
     }
     glEnable(GL_COLOR_MATERIAL);
     glEnable(GL_LIGHTING);
@@ -245,10 +250,6 @@ static void computeFPS() {
 // Cria/posiciona n asteroides
 static void spawn_asteroids() {
     asteroids.clear();
-    std::random_device rd;
-    std::mt19937       rng(rd());
-    std::uniform_real_distribution<float> distXZ(0.7f, 1.3f);
-    std::uniform_real_distribution<float> distY (0.9f, 1.2f);
 
     for (int i = 0; i < N_ASTEROIDS; ++i) {
         float rXZ = distXZ(rng), rY = distY(rng);
