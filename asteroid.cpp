@@ -35,14 +35,18 @@ static std::uniform_real_distribution<float> distX(-10.0, 10.0);
 static std::uniform_real_distribution<float> distY(-5.0, 5.0);
 static std::uniform_real_distribution<float> distSpeed(0.9, 1.5);
 
+void asteroid_respawn(Asteroid& a, float back_z) {
+    a.posz = back_z;
+    a.posx = distX(rng);
+    a.posy = distY(rng);
+}
+
 void asteroid_update(Asteroid& a, float speed){
     a.posz += distSpeed(rng)*(speed);
 
     // quando passar de z = 1, “sumir” e reaparecer em z = –15
     if (a.posz > 1.0) {
-        a.posz  = -20.0;
-        a.posx  = distX(rng);
-        a.posy  = distY(rng);
+        asteroid_respawn(a);
     }
 }
 

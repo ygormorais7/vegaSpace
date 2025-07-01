@@ -24,4 +24,7 @@ void asteroid_cleanup(Asteroid& a);
 
 void asteroid_update(Asteroid& a, float speed = 0.07f);
 
+// Quando ele chocar-se com uma esfera
+void asteroid_respawn(Asteroid& a, float back_z = -20.0f);
+
 #endif

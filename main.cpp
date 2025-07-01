@@ -171,7 +171,7 @@ static void display() {
                 if (dist2 < R*R) {
                     // colisão: reposiciona asteroide, remove esfera e pontua
                     it->active = false;         // “destrói” a esfera
-                    a.posz = -20.0f;            // reposiciona o asteroide lá atrás
+                    asteroid_respawn(a);        // reposiciona o asteroide
                     score += 10;                // incrementa a pontuação
                 }
             }
@@ -209,8 +209,8 @@ static void display() {
 
     // tela de Game Over
     if (is_gameover) {
-        draw_text_stroke(-0.5, 0.0, "GAME OVER", 0.002);
-        draw_text_stroke(-0.7, -0.2, "Pressione 'J' para jogar novamente", 0.0005);
+        draw_text_stroke(-0.78, 0.0, "GAME OVER", 0.002);
+        draw_text_stroke(-0.6, -0.2, "Pressione 'J' para jogar novamente", 0.0005);
     }
     glEnable(GL_COLOR_MATERIAL);
     glEnable(GL_LIGHTING);
