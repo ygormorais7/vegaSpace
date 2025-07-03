@@ -12,4 +12,4 @@ g++ -o exe *.cpp -lGL -lGLU -lglut -lm && ./exe
 
 - Não morrer para um asteroide que está no lugar do respawn da nave
 
-- Agora apertar "P" salva o estado do jogo e abre o menu
+- Agora apertar "P" salva o estado do jogo e abre o 
