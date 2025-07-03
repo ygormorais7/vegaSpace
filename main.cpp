@@ -20,6 +20,7 @@
 #include "starship.h"
 #include "asteroid.h"
 #include "sphere.h"
+#include "menu.h"
 #include <algorithm>
 #include <random>
 #include <cmath>
@@ -52,10 +53,13 @@ static unsigned int height = 600;
 static std::vector<Esfera> spheres;         // Lista de esferas
 static std::vector<Asteroid> asteroids;     // Lista de asteroides
 size_t numAtivas = 0;                       // Número de esferas ativas
-bool is_paused = false;                     // Determina se a animacao esta tocando ou em pausa
 
-static int score = 0;
+bool is_paused = false;                     // Determina se a animacao esta tocando ou em pausa
+int score = 0;
+int shotNum = 3;
 static bool is_gameover = false;
+float sphere_speed_multiplier = 1.0f;
+
 static const float SPHERE_RADIUS = 0.02;
 static const float SHIP_RADIUS = 0.5;
 static const int N_ASTEROIDS = 10;
@@ -70,6 +74,7 @@ static void timer(int);
 static void computeFPS();
 static void spawn_asteroids();
 static void reset_game();
+static void start_or_resume();
 
 
 
@@ -103,6 +108,11 @@ static void init_glut(int argc, char** argv) {
     glutInitWindowPosition(100, 100);
     glutCreateWindow("Vega Space");
 
+    // inicializa menu antes de registrar os outros callbacks
+    menu_init();
+    menu_set_size(width, height);
+    menu_set_start_callback(start_or_resume);
+
     // Define as funcoes de callback
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);
@@ -122,6 +132,18 @@ static void init_glut(int argc, char** argv) {
 // Mostra tudo que há na tela
 static void display() {
     computeFPS();
+
+    if (menu_active()) {
+        menu_display();
+        return;
+    }
+
+    // reinstaura projeção em perspectiva
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluPerspective(45.0, reshape_ratio, 0.1, 100.0);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
 
     // Limpa o buffer de cor e de profundidade
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -209,7 +231,7 @@ static void display() {
     // desenha FPS
     draw_text_stroke(-reshape_ratio - 0.30, 1.15, "FPS: "+std::to_string(fps), 0.0005);
     // exibe pontuação
-    draw_text_stroke(-reshape_ratio, 1.15, "Score: " + std::to_string(score), 0.0005);
+    draw_text_stroke(-reshape_ratio, 1.15, "ESCORE: " + std::to_string(score), 0.0005);
 
     // tela de Game Over
     if (is_gameover) {
@@ -228,11 +250,15 @@ static void display() {
 static void reshape(int w, int h) {
     width = w; height = h;
     reshape_ratio = float(w)/float(h);
+
     glViewport(0,0,w,h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     gluPerspective(45.0, reshape_ratio, 0.1, 100.0);
     glMatrixMode(GL_MODELVIEW);
+
+    // informa o menu do novo tamanho de janela
+    menu_set_size(w, h);
 }
 
 // Função para computar FPS
@@ -271,12 +297,28 @@ static void reset_game() {
     spheres.clear();
 }
 
+static void start_or_resume() {
+    if (is_gameover) {
+        reset_game();      // zerar score e flags apenas se for Game Over
+    } else {
+        is_paused = false; // caso tenha vindo de “P”, só despausar
+    }
+}
+
 static void timer(int) {
     glutTimerFunc(1000/fps_desejado, timer, 0);
     glutPostRedisplay();
 }
 
 static void keyboard(unsigned char key, int x, int y) {
+    // Garante prioridade
+    if (key=='p' || key=='P') {
+        is_paused = true;
+        menu_show();
+        return;
+    }
+
+    // Garante só resetar o jogo se is_gameover estiver ativo
     if (is_gameover && (key=='j' || key=='J')) {
         reset_game();
         return;
@@ -296,10 +338,11 @@ static void keyboard(unsigned char key, int x, int y) {
             break;
 
         case 'f': case 'F':
-            if (!is_paused && spheres.size() < 5) {
+            if (!is_paused && spheres.size() < shotNum) {
                 Esfera e;
                 sphere_init(e);
                 sphere_fire(e, ship);
+                e.speed *= sphere_speed_multiplier; // aplica multiplicador
                 spheres.push_back(e);
             }
             break;

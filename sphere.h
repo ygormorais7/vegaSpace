@@ -8,11 +8,11 @@ struct Esfera {
     bool   active   = false;
     float  x, y, z;               // Posição X,Y,Z da esfera
     float  dirx, diry, dirz;      // Direção X,Y,Z do movimento
-    float  velocity = 0.07f;      // Velocidade da esfera
+    float  speed = 0.07f;      // Velocidade da esfera
 };
 
 // Inicializa apenas o estado inativo
-void sphere_init(Esfera& e, float velocity = 0.07f);
+void sphere_init(Esfera& e, float speed = 0.07f);
 
 // Dispara a esfera a partir da nave
 void sphere_fire(Esfera& e, const Ship& ship, float start_dist = 0.4f);

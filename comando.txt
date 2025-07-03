@@ -1,4 +1,4 @@
-g++ -o exe main.cpp glm.cpp starship.cpp sphere.cpp asteroid.cpp -lGL -lGLU -lglut -lm && ./exe
+g++ -o exe *.cpp -lGL -lGLU -lglut -lm && ./exe
 
 
 
