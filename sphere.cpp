@@ -1,9 +1,9 @@
 #include "sphere.h"
 #include <cmath>
 
-void sphere_init(Esfera& e, float velocity) {
+void sphere_init(Esfera& e, float speed) {
     e.active   = false;
-    e.velocity = velocity;
+    e.speed = speed;
 }
 
 void sphere_fire(Esfera& e, const Ship& ship, float d) {
@@ -21,9 +21,9 @@ void sphere_fire(Esfera& e, const Ship& ship, float d) {
 
 void sphere_update(Esfera& e, float limit) {
     if (!e.active) return;
-    e.x += e.dirx * e.velocity;
-    e.y += e.diry * e.velocity;
-    e.z += e.dirz * e.velocity;
+    e.x += e.dirx * e.speed;
+    e.y += e.diry * e.speed;
+    e.z += e.dirz * e.speed;
     if (fabsf(e.x) > limit || fabsf(e.z) > limit)
         e.active = false;
 }
