@@ -14,7 +14,8 @@
       - Loading material textures from PPM format image files
       - Animation with Wavefront OBJ models
  */
-
+#ifndef GLM_H
+#define GLM_H
 
 #if defined(__APPLE__) || defined(MACOSX)
 #define GL_SILENCE_DEPRECATION
@@ -328,3 +329,4 @@ glmWeld(GLMmodel* model, GLfloat epsilon);
  */
 GLubyte* 
 glmReadPPM(char* filename, int* width, int* height);
+#endif // GLM_H
