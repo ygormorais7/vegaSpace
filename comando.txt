@@ -11,3 +11,5 @@ g++ -o exe *.cpp -lGL -lGLU -lglut -lm && ./exe
     e as inativas (quando ela ultrapassar um limite 20 no eixo X ou Z) sejam removida
 
 - Não morrer para um asteroide que está no lugar do respawn da nave
+
+- Agora apertar "P" salva o estado do jogo e abre o menu
