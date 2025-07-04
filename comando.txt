@@ -1,4 +1,4 @@
-g++ -o exe *.cpp -lGL -lGLU -lglut -lm && ./exe
+g++ -o exe src/*.cpp -lGL -lGLU -lglut -lm && ./exe
 
 
 
