@@ -1,7 +1,9 @@
 /*
  * Computacao Grafica
- * Projeto Asteroids
- * Autores: Carol e Ygor
+ * Projeto Asteroids - VegaSpace
+ * Autores: 
+ *          Ana Carolline Santos Silva
+ *          Ygor Francisco de Carvalho Morais
  */
 
 /* Inclui os headers do OpenGL, GLU, e GLUT */
@@ -21,6 +23,7 @@
 #include "../includes/asteroid.h"
 #include "../includes/sphere.h"
 #include "../includes/menu.h"
+#include "../includes/stars.h"
 #include <algorithm>
 #include <random>
 #include <cmath>
@@ -34,6 +37,8 @@ static std::uniform_real_distribution<float> distY (0.9f, 1.2f);
 // --- Constantes ---
 #define ESC 27
 #define MAX_FPS 70
+#define NUM_STARS 1100      // Número de estrelas no fundo
+#define STARS_RADIUS 100.0f // Distância das estrelas
 
 // --- Variáveis de FPS ---
 static int fps_desejado = 30;
@@ -87,12 +92,15 @@ int main(int argc, char** argv) {
     sphere_init(sphere);
     // Inicializa os asteroides
     spawn_asteroids();
+    // Inicializa as estrelas
+    init_stars(NUM_STARS, STARS_RADIUS);
 
     // Evitar vazamento de memória limpando-a
     atexit([](){
         ship_cleanup(ship);
         for (auto& a : asteroids)
             asteroid_cleanup(a);
+            cleanup_stars();
     });
 
     glutMainLoop();
@@ -126,7 +134,7 @@ static void init_glut(int argc, char** argv) {
     glEnable(GL_DEPTH_TEST);        // Teste de profundidade, diferencia objetos na frente de outros
     glEnable(GL_COLOR_MATERIAL);
     // Define uma cor de fundo
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
 // Mostra tudo que há na tela
@@ -154,6 +162,9 @@ static void display() {
     gluLookAt(0.0, 0.0, 3.0,    // Posição da câmera: (0, 0, 3)
               0.0, 0.0, 0.0,    // Olhando para a origem: (0, 0, 0)
               0.0, 1.0, 0.0);   // Vetor "up" (para cima): (0, 1, 0)
+
+    // Desenha as estrelas no background
+    draw_stars();
 
     // Define a posição da fonte de luz
     GLfloat light_pos[] = {2.0, 2.0, 5.0, 1.0};
