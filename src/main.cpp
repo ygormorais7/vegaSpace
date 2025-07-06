@@ -25,6 +25,7 @@
 #include "../includes/menu.h"
 #include "../includes/stars.h"
 #include "../includes/audio.h"
+#include "../includes/enemy.h"
 #include <algorithm>
 #include <random>
 #include <cmath>
@@ -58,17 +59,21 @@ static unsigned int height = 600;
 // --- Lista de Esferas, Asteroides e Pause ---
 static std::vector<Esfera> spheres;         // Lista de esferas
 static std::vector<Asteroid> asteroids;     // Lista de asteroides
+static std::vector<EnemyShip> enemies; 
 size_t numAtivas = 0;                       // Número de esferas ativas
 
 bool is_paused = false;                     // Determina se a animacao esta tocando ou em pausa
 int score = 0;
 int shotNum = 3;
 static bool is_gameover = false;
+static bool enemy_spawned = false; 
 float sphere_speed_multiplier = 1.0f;
 
 static const float SPHERE_RADIUS = 0.02;
 static const float SHIP_RADIUS = 0.5;
+static const float ENEMY_RADIUS = 0.6f; 
 static const int N_ASTEROIDS = 10;
+static const int N_ENEMIES = 3;   // Quantidade de inimigos criados
 
 // ------------ Declaracoes antecipadas (forward) das funcoes (assinaturas) ------------
 static void init_glut(int argc, char** argv);
@@ -79,6 +84,7 @@ static void keyboard_special(int key, int x, int y);
 static void timer(int);
 static void computeFPS();
 static void spawn_asteroids();
+static void spawn_enemies();
 static void reset_game();
 static void start_or_resume();
 
@@ -106,8 +112,10 @@ int main(int argc, char** argv) {
         ship_cleanup(ship);
         for (auto& a : asteroids)
             asteroid_cleanup(a);
-            cleanup_stars();
-            audio_cleanup();
+        for (auto& e : enemies)
+            enemy_cleanup(e);
+        cleanup_stars();
+        audio_cleanup();
     });
 
     glutMainLoop();
@@ -186,6 +194,20 @@ static void display() {
         asteroid_draw(a);
     }
 
+    // Verifica se a pontuação foi atingida e se os inimigos ainda não foram criados
+    if (!is_paused && !enemy_spawned && score >= 30) { // pontuação para aparecer os inimigos (eh pra ser 100)
+        spawn_enemies();
+        enemy_spawned = true; // Marca que já foram criados para não criar de novo
+    }
+
+    // Desenha e atualiza todos os inimigos ativos
+    for (auto& e : enemies) {
+        if (e.active) {
+            if (!is_paused) enemy_update(e);
+            enemy_draw(e);
+        }
+    }
+
     // atualiza, desenha e remove esferas inativas
     for (auto it = spheres.begin(); it != spheres.end(); ) {
         if (!is_paused) sphere_update(*it);
@@ -222,6 +244,32 @@ static void display() {
             }
         }
     }
+
+    // colisão Esfera do Jogador vs Inimigo
+    if (!is_paused) {
+        for (auto& enemy : enemies) {
+            if (!enemy.active) continue;
+
+            // verifique a colisão com cada esfera do jogador.
+            for (auto it = spheres.begin(); it != spheres.end(); ++it) {
+                if (!it->active) continue;
+
+                float dx = enemy.posx - it->x;
+                float dy = enemy.posy - it->y;
+                float dz = enemy.posz - it->z;
+                float dist2 = dx * dx + dy * dy + dz * dz;
+
+                float R = ENEMY_RADIUS + SPHERE_RADIUS;
+
+                if (dist2 < R * R) {
+                    it->active = false;      // Desativa a esfera do jogador
+                    enemy.active = false;    // “destrói” a nave inimiga
+                    score += 50;             // Incrementa a pontuação
+                    break;
+                }
+            }
+        }
+    }   
 
     // colisão Asteroide vs Nave
     if (!is_paused) {
@@ -306,6 +354,28 @@ static void spawn_asteroids() {
         asteroid_init(a, "./modelos/asteroides/asteroid1/asteroidBase.obj", x, y, -20.0, s, 0.0, 45.0 * i, 0.0);
         asteroids.push_back(a);
     }
+}
+
+// cria as naves inimigas
+static void spawn_enemies() {
+    enemies.clear(); // Limpa inimigos de uma rodada anterior, se houver
+
+    for (int i = 0; i < N_ENEMIES; ++i) {
+        EnemyShip new_enemy;
+
+        enemy_init(new_enemy, "./modelos/naves/nave1.obj");
+
+        // Posiciona os inimigos em linha em z = -5
+        new_enemy.posx = -1.8f + (i * 1.8f); // Espaçamento entre eles
+        new_enemy.posy = 0.6f;              // Um pouco acima do jogador
+        new_enemy.posz = -5.0f;
+
+        // Vira a nave inimiga para olhar na direção do jogador
+        new_enemy.roty = 180.0f;
+        
+        enemies.push_back(new_enemy);
+    }
+    printf("%d naves inimigas criadas!\n", N_ENEMIES);
 }
 
 static void reset_game() {
