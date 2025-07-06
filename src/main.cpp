@@ -24,6 +24,7 @@
 #include "../includes/sphere.h"
 #include "../includes/menu.h"
 #include "../includes/stars.h"
+#include "../includes/audio.h"
 #include <algorithm>
 #include <random>
 #include <cmath>
@@ -86,6 +87,11 @@ static void start_or_resume();
 int main(int argc, char** argv) {
     init_glut(argc, argv);
 
+    // Inicializa e carrega os sons
+    audio_init();
+    audio_load_music("./assets/sounds/ambient.mp3"); // musica ambiente
+    audio_load_sfx("./assets/sounds/laserShot.wav"); // som do tiro
+
     // Inicializa a nave
     ship_init(ship, "./modelos/naves/nave1.obj");
     // Inicializa a esfera
@@ -101,6 +107,7 @@ int main(int argc, char** argv) {
         for (auto& a : asteroids)
             asteroid_cleanup(a);
             cleanup_stars();
+            audio_cleanup();
     });
 
     glutMainLoop();
@@ -143,6 +150,7 @@ static void display() {
 
     if (menu_active()) {
         menu_display();
+        audio_play_music_loop(); 
         return;
     }
 
@@ -314,6 +322,8 @@ static void start_or_resume() {
     } else {
         is_paused = false; // caso tenha vindo de “P”, só despausar
     }
+    // Para a música ambiente quando o jogo começa
+    audio_stop_music();
 }
 
 static void timer(int) {
@@ -326,6 +336,7 @@ static void keyboard(unsigned char key, int x, int y) {
     if (key=='p' || key=='P') {
         is_paused = true;
         menu_show();
+        audio_play_music_loop(); // Toca a música do menu ao pausar
         return;
     }
 
@@ -355,6 +366,7 @@ static void keyboard(unsigned char key, int x, int y) {
                 sphere_fire(e, ship);
                 e.speed *= sphere_speed_multiplier; // aplica multiplicador
                 spheres.push_back(e);
+                audio_play_sfx(); // Toca o som de tiro
             }
             break;
     }
