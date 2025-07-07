@@ -70,10 +70,13 @@ static bool enemy_spawned = false;
 float sphere_speed_multiplier = 1.0f;
 
 static const float SPHERE_RADIUS = 0.02;
-static const float SHIP_RADIUS = 0.5;
-static const float ENEMY_RADIUS = 0.6f; 
+static const float SHIP_RADIUS = 0.3;
 static const int N_ASTEROIDS = 10;
-static const int N_ENEMIES = 3;   // Quantidade de inimigos criados
+
+// nave inimiga
+static const float ENEMY_RADIUS = 0.6;
+static const int N_ENEMIES = 1;             // Quantidade de inimigos criados
+static int last_enemy_fire_time = 0;
 
 // ------------ Declaracoes antecipadas (forward) das funcoes (assinaturas) ------------
 static void init_glut(int argc, char** argv);
@@ -195,7 +198,7 @@ static void display() {
     }
 
     // Verifica se a pontuação foi atingida e se os inimigos ainda não foram criados
-    if (!is_paused && !enemy_spawned && score >= 30) { // pontuação para aparecer os inimigos (eh pra ser 100)
+    if (!is_paused && !enemy_spawned && score >= 10) { // pontuação para aparecer os inimigos (eh pra ser 100)
         spawn_enemies();
         enemy_spawned = true; // Marca que já foram criados para não criar de novo
     }
@@ -203,9 +206,22 @@ static void display() {
     // Desenha e atualiza todos os inimigos ativos
     for (auto& e : enemies) {
         if (e.active) {
-            if (!is_paused) enemy_update(e);
+            if (!is_paused) enemy_update(e, ship);  // agora recebe a ship
             enemy_draw(e);
         }
+    }
+
+    // Enemy firing: a cada 3s dispara uma esfera na direção que olha  
+    int now = glutGet(GLUT_ELAPSED_TIME);
+    if (!is_paused && enemy_spawned && now - last_enemy_fire_time >= 3000) {
+        for (auto& e : enemies) {
+            if (!e.active) continue;
+            Esfera be;
+            sphere_init(be);
+            sphere_fire_enemy(be, e, 0.6f);
+            spheres.push_back(be);
+        }
+        last_enemy_fire_time = now;
     }
 
     // atualiza, desenha e remove esferas inativas
@@ -223,6 +239,8 @@ static void display() {
     if (!is_paused) {
         for (auto& a : asteroids) {
             for (auto it = spheres.begin(); it != spheres.end(); ++it) {
+                // ignora disparos da nave inimiga
+                if (!it->active || it->is_enemy) continue;
                 // 1) calcula vetor diferença entre centros
                 float dx = a.posx - it->x;
                 float dy = a.posy - it->y;
@@ -269,7 +287,30 @@ static void display() {
                 }
             }
         }
-    }   
+    }  
+
+    // colisão Esfera (jogador) vs EnemyShip
+    if (!is_paused) {
+        for (auto& en : enemies) {
+            if (!en.active) continue;
+            for (auto& s : spheres) {
+                if (!s.active || s.is_enemy) continue;
+                float dx = en.posx - s.x;
+                float dy = en.posy - s.y;
+                float dz = en.posz - s.z;
+                float dist2 = dx*dx + dy*dy + dz*dz;
+                float R = SPHERE_RADIUS + ENEMY_RADIUS;
+                if (dist2 < R*R) {
+                    // “destrói” inimigo e projétil
+                    en.active = false;
+                    s.active  = false;
+                    // opcional: dar pontos ao jogador
+                    score += 20;
+                    break;  // sai do loop de esferas para este inimigo
+                }
+            }
+        }
+    }
 
     // colisão Asteroide vs Nave
     if (!is_paused) {
@@ -288,6 +329,24 @@ static void display() {
                 is_paused   = true;     // pausa o jogo
                 is_gameover = true;     // sinaliza Game Over
                 break;
+            }
+        }
+    }
+
+    // colisão Esfera inimiga vs Nave
+    if (!is_paused) {
+        for (auto& s : spheres) {
+            if (!s.active || !s.is_enemy) continue;
+            float dx = s.x - ship.posx;
+            float dy = s.y - ship.posy;
+            float dz = s.z - ship.posz;
+            float dist2 = dx*dx + dy*dy + dz*dz;
+            float R = SPHERE_RADIUS + SHIP_RADIUS;
+            if (dist2 < R*R) {
+               // Game Over ao ser atingido por tiro inimigo
+               is_paused   = true;
+            is_gameover = true;
+               break;
             }
         }
     }
@@ -358,24 +417,19 @@ static void spawn_asteroids() {
 
 // cria as naves inimigas
 static void spawn_enemies() {
-    enemies.clear(); // Limpa inimigos de uma rodada anterior, se houver
+    enemies.clear(); // limpa inimigos antigos
 
-    for (int i = 0; i < N_ENEMIES; ++i) {
-        EnemyShip new_enemy;
+    // Cria única nave inimiga parada
+    EnemyShip new_enemy;
+    enemy_init(new_enemy, "./modelos/naves/space_battleship_lowpoly.obj");
+    new_enemy.posx   = 0.0f;
+    new_enemy.posy   = 0.0f;
+    new_enemy.posz   = -10.0f;
+    new_enemy.roty   = 180.0f;
+    new_enemy.speed  = 0.0f;      // sem movimento
+    enemies.push_back(new_enemy);
 
-        enemy_init(new_enemy, "./modelos/naves/nave1.obj");
-
-        // Posiciona os inimigos em linha em z = -5
-        new_enemy.posx = -1.8f + (i * 1.8f); // Espaçamento entre eles
-        new_enemy.posy = 0.6f;              // Um pouco acima do jogador
-        new_enemy.posz = -5.0f;
-
-        // Vira a nave inimiga para olhar na direção do jogador
-        new_enemy.roty = 180.0f;
-        
-        enemies.push_back(new_enemy);
-    }
-    printf("%d naves inimigas criadas!\n", N_ENEMIES);
+    printf("1 nave inimiga criada!\n");
 }
 
 static void reset_game() {
@@ -430,13 +484,17 @@ static void keyboard(unsigned char key, int x, int y) {
             break;
 
         case 'f': case 'F':
-            if (!is_paused && spheres.size() < shotNum) {
-                Esfera e;
-                sphere_init(e);
-                sphere_fire(e, ship);
-                e.speed *= sphere_speed_multiplier; // aplica multiplicador
-                spheres.push_back(e);
-                audio_play_sfx(); // Toca o som de tiro
+            if (!is_paused) {
+                // conta só esferas ativas que NÃO são de inimigo
+                int playerShots = std::count_if(spheres.begin(), spheres.end(), [](const Esfera& b){ return b.active && !b.is_enemy; });
+                if (playerShots < shotNum) {
+                    Esfera e;
+                    sphere_init(e);
+                    sphere_fire(e, ship);
+                    e.speed *= sphere_speed_multiplier;
+                    spheres.push_back(e);
+                    audio_play_sfx();
+                }
             }
             break;
     }

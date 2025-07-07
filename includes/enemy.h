@@ -2,6 +2,7 @@
 #define ENEMY_H
 
 #include "glm.h"
+#include "starship.h"
 
 // Estrutura para os dados da nave inimiga
 struct EnemyShip {
@@ -24,7 +25,7 @@ void enemy_cleanup(EnemyShip& enemy);
 // Desenha a nave inimiga na tela
 void enemy_draw(const EnemyShip& enemy);
 
-// Atualiza a lógica da nave
-void enemy_update(EnemyShip& enemy);
+// Atualiza a lógica da nave e ajusta rotação para olhar o player
+void enemy_update(EnemyShip& enemy, const Ship& player);
 
 #endif

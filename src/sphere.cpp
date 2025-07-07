@@ -1,9 +1,11 @@
 #include "../includes/sphere.h"
+#include "../includes/enemy.h"
 #include <cmath>
 
 void sphere_init(Esfera& e, float speed) {
     e.active   = false;
     e.speed = speed;
+    e.is_enemy = false;
 }
 
 void sphere_fire(Esfera& e, const Ship& ship, float d) {
@@ -24,7 +26,8 @@ void sphere_update(Esfera& e, float limit) {
     e.x += e.dirx * e.speed;
     e.y += e.diry * e.speed;
     e.z += e.dirz * e.speed;
-    if (fabsf(e.x) > limit || fabsf(e.y) > limit || fabsf(e.z) > limit)
+    if (fabsf(e.x) > limit || fabsf(e.y) > limit || fabsf(e.z) > limit ||
+        fabsf(e.x) < -10 || fabsf(e.y) < -10 || fabsf(e.z) < -1)
         e.active = false;
 }
 
@@ -43,4 +46,21 @@ void sphere_draw(const Esfera& e) {
       glutSolidSphere(0.02,20,16);
     glPopMatrix();
     glPopAttrib();
+}
+
+void sphere_fire_enemy(Esfera& e, const EnemyShip& enemy, float start_dist) {
+    e.active = true;
+    e.is_enemy = true;
+    // converte para radianos
+    float yaw   = enemy.roty * M_PI/180.0f;
+    float pitch = enemy.rotx * M_PI/180.0f;
+    // calcula vetor direção
+    e.dirx = sinf(yaw) * cosf(pitch);
+    e.diry = -sinf(pitch);
+    e.dirz = cosf(yaw) * cosf(pitch);
+    // posiciona a esfera na frente da nave
+    e.x = enemy.posx + e.dirx * start_dist;
+    e.y = enemy.posy + e.diry * start_dist;
+    e.z = enemy.posz + e.dirz * start_dist;
+    // mantém e.speed como definido em sphere_init
 }
