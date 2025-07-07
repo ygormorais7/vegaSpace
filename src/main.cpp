@@ -198,7 +198,7 @@ static void display() {
     }
 
     // Verifica se a pontuação foi atingida e se os inimigos ainda não foram criados
-    if (!is_paused && !enemy_spawned && score >= 10) { // pontuação para aparecer os inimigos (eh pra ser 100)
+    if (!is_paused && !enemy_spawned && score >= 50) { // pontuação para aparecer os inimigos (eh pra ser 100)
         spawn_enemies();
         enemy_spawned = true; // Marca que já foram criados para não criar de novo
     }

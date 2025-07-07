@@ -1,15 +1,1 @@
 g++ -o exe src/*.cpp -lGL -lGLU -lglut -lm -lSDL2 -lSDL2_mixer && ./exe
-
-
-
-
-- Explicar como funciona o tiro
-    - A nave deve estar com is_paused desativado
-    - Há um vector que armazena quantas esferas forem disparadas
-    - Em keyboard() é criada uma nova esfera cada vez que f for apertado
-    - Em display() itera-se sobre os elementos do vector para que cada uma seja desenhada
-    e as inativas (quando ela ultrapassar um limite 20 no eixo X ou Z) sejam removida
-
-- Não morrer para um asteroide que está no lugar do respawn da nave
-
-- Agora apertar "P" salva o estado do jogo e abre o 
